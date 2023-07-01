@@ -26,7 +26,7 @@ function MyStack() {
 
   return (
     <Stack.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName="Home"
       screenOptions={{
         headerTitleAlign: "center",
         headerStyle: {
@@ -40,7 +40,7 @@ function MyStack() {
         },
       }}
     >
-      <Stack.Screen name="Home" component={Home} options={{ title: "Home" }} />
+      <Stack.Screen name="Home" component={Home} options={{ title: "Tomato App" }} />
       {/* <Stack.Screen
         name="Welcone"
         component={WelcomeScreen}
@@ -56,7 +56,9 @@ function MyStack() {
         component={Login}
         options={[{ title: "Login" }, { headerLeft: null }]}
       />
-      <Stack.Screen
+      
+      <Stack.Screen name="Dashboard" component={Dashboard} options={{ title: "Dashboard" }} />
+      {/* <Stack.Screen
         name="Dashboard"
         component={Dashboard}
         options={{
@@ -75,7 +77,7 @@ function MyStack() {
             </Text>
           ),
         }}
-      />
+      /> */}
       <Stack.Screen
         name="Camera"
         component={CameraScreen}

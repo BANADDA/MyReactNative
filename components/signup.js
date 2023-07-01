@@ -33,7 +33,7 @@ export default function Signup({ navigation }) {
   };
 
   const registerUser = async () => {
-    if (email === "" || password === "" || displayName=== "") {
+    if (email === "" || password === "" || displayName === "") {
       Alert.alert("Enter details to signup!");
     } else {
       setIsLoading(true);
@@ -48,9 +48,15 @@ export default function Signup({ navigation }) {
         console.log(user);
         navigation.navigate("Login");
       } catch (error) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
+        if (error.code == "auth/email-already-in-use") {
+          alert("The email address is already in use");
+        } else if (error.code == "auth/invalid-email") {
+          alert("The email address is not valid.");
+        } else if (error.code == "auth/operation-not-allowed") {
+          alert("Operation not allowed.");
+        } else if (error.code == "auth/weak-password") {
+          alert("The password is too weak.");
+        }
       }
       setIsLoading(false);
     }
@@ -112,11 +118,11 @@ const styles = StyleSheet.create({
     marginLeft: "5%",
     marginRight: "5%",
     marginTop: "55%",
-    padding: 35
+    padding: 35,
   },
   inputStyle: {
     width: "100%",
-    fontWeight:  "bold",
+    fontWeight: "bold",
     marginBottom: 15,
     paddingBottom: 15,
     alignSelf: "center",
@@ -127,7 +133,7 @@ const styles = StyleSheet.create({
     color: "#3740FE",
     marginTop: 25,
     textAlign: "center",
-    fontWeight:  "bold"
+    fontWeight: "bold",
   },
   preloader: {
     left: 0,

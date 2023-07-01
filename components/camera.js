@@ -1,134 +1,58 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ImageBackground, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Button, Dimensions } from 'react-native';
 import { Camera } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
+import CircleCamera from "../elements/CircleButton";
 
 export default function CameraScreen() {
-  const [startCamera, setStartCamera] = useState(false);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [capturedImage, setCapturedImage] = useState(null);
-  const [cameraType, setCameraType] = useState(Camera.Constants.Type.back);
-  const [flashMode, setFlashMode] = useState('off');
+  const [cameraPermission, setCameraPermission] = useState(null);
+  const [galleryPermission, setGalleryPermission] = useState(null);
 
-  const cameraRef = useRef(null);
+  const [camera, setCamera] = useState(null);
+  const [type, setType] = useState(Camera.Constants.Type.back);
+  const navigation = useNavigation();
 
-  const __startCamera = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    console.log(status);
-    if (status === 'granted') {
-      setStartCamera(true);
-    } else {
-      Alert.alert('Access denied');
+  const permissionFunction = async () => {
+    // Here is how you can get the camera permission
+    const cameraPermission = await Camera.requestCameraPermissionsAsync();
+
+    setCameraPermission(cameraPermission.status === 'granted');
+
+    const imagePermission = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+    setGalleryPermission(imagePermission.status === 'granted');
+
+    if (
+      imagePermission.status !== 'granted' &&
+      cameraPermission.status !== 'granted'
+    ) {
+      alert('Permission for media access needed.');
     }
   };
 
-  const __takePicture = async () => {
-    const photo = await cameraRef.current.takePictureAsync();
-    console.log(photo);
-    setPreviewVisible(true);
-    setCapturedImage(photo);
-  };
+  useEffect(() => {
+    permissionFunction();
+  }, []);
 
-  const __savePhoto = () => {};
-
-  const __retakePicture = () => {
-    setCapturedImage(null);
-    setPreviewVisible(false);
-    __startCamera();
-  };
-
-  const __handleFlashMode = () => {
-    if (flashMode === 'on') {
-      setFlashMode('off');
-    } else if (flashMode === 'off') {
-      setFlashMode('on');
-    } else {
-      setFlashMode('auto');
-    }
-  };
-
-  const __switchCamera = () => {
-    if (cameraType === 'back') {
-      setCameraType('front');
-    } else {
-      setCameraType('back');
+  const takePicture = async () => {
+    if (camera) {
+      const data = await camera.takePictureAsync(null);
+      navigation.navigate("Dashboard", { takenImage: data.uri });
     }
   };
 
   return (
     <View style={styles.container}>
-      {startCamera ? (
-        <View
-          style={{
-            flex: 1,
-            width: '100%'
-          }}
-        >
-          {previewVisible && capturedImage ? (
-            <CameraPreview photo={capturedImage} savePhoto={__savePhoto} retakePicture={__retakePicture} />
-          ) : (
-            <Camera
-              type={cameraType}
-              flashMode={flashMode}
-              style={{ flex: 1 }}
-              ref={cameraRef}
-            >
-              <View
-                style={{
-                  flex: 1,
-                  width: '100%',
-                  backgroundColor: 'transparent',
-                  flexDirection: 'row'
-                }}
-              >
-                <View
-                  style={{
-                    position: 'absolute',
-                    left: '5%',
-                    top: '10%',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={__handleFlashMode}
-                    style={{
-                      backgroundColor: flashMode === 'off' ? '#000' : '#fff',
-                      borderRadius: 25,
-                      height: 25,
-                      width: 25
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 20
-                      }}
-                    >
-                      ⚡️
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={__switchCamera}
-                    style={{
-                      marginTop: 20,
-                      borderRadius: 25,
-                      height: 25,
-                      width: 25
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 20
-                      }}
-                    >
-                      {cameraType === 'front' ? '🤳' : '📷'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Camera>
-          )}
-        </View>
-      ) : null}
+      <Camera
+        ref={(ref) => setCamera(ref)}
+        style={[styles.camera, { height: Dimensions.get('window').height }]}
+        type={type}
+        ratio={'4:3'}
+      />
+      <View style={styles.optionsRow}>
+        <CircleCamera onPress={takePicture} />
+      </View>
     </View>
   );
 }
@@ -136,7 +60,18 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#25292e',
+  },
+  camera: {
+    width: '100%',
+    aspectRatio: 3 / 4,
+  },
+  optionsRow: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center'
-  }
+  },
 });

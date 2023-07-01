@@ -29,9 +29,19 @@ export default function Login({ navigation }) {
           console.log(user);
         })
         .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          console.log(errorCode, errorMessage);
+          if (error.code == "auth/missing-password") {
+            alert("The password is missing. Please try again");
+          } else if (error.code == "auth/missing-email") {
+            alert("The email is missing. Please try again");
+          } else if (error.code == "auth/operation-not-allowed") {
+            alert("Operation not allowed.");
+          } else if (error.code == "auth/invalid-email") {
+            alert("The email address is not valid.");
+          } 
+          // else if (errorCode === "auth/wrong-password") {
+          //   console.log("Wrong password");
+          //   alert("Wrong password.");
+          // }
         });
       setIsLoading(false);
     }
@@ -102,7 +112,7 @@ const styles = StyleSheet.create({
     color: "#3740FE",
     marginTop: 25,
     textAlign: "center",
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   preloader: {
     left: 0,

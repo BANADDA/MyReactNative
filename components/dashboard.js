@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, forwardRef, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   Modal,
@@ -13,7 +13,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as MediaLibrary from "expo-media-library";
 import { captureRef } from "react-native-view-shot";
 import domtoimage from "dom-to-image";
-import { Camera } from "expo-camera";
 
 import Button from "../elements/Button";
 import ImageViewer from "../elements/ImageViewer";
@@ -22,19 +21,31 @@ import IconButton from "../elements/IconButton";
 import EmojiPicker from "../elements/EmojiPicker";
 import EmojiList from "../elements/EmojiList";
 import EmojiSticker from "../elements/EmojiSticker";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRoute } from "@react-navigation/native";
+// import * as tf from "@tensorflow/tfjs";
+
+// import { TFLiteImageRecognition } from "react-native-tensorflow-lite";
 
 const PlaceholderImage = require("../assets/giffy.gif");
 
-export default function Dashboard() {
+const Dashboard = forwardRef(({ navigation }, ref) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showAppOptions, setShowAppOptions] = useState(false);
   const [pickedEmoji, setPickedEmoji] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-
   const [status, requestPermission] = MediaLibrary.usePermissions();
   const imageRef = useRef();
+  const route = useRoute();
+
+  useEffect(() => {
+    const { takenImage } = route.params || {};
+    if (takenImage) {
+      setSelectedImage(takenImage);
+      setShowAppOptions(true);
+    }
+  }, [route.params]);
 
   if (status === null) {
     requestPermission();
@@ -54,6 +65,55 @@ export default function Dashboard() {
     }
   };
 
+  // async function runModel() {
+  //   const model = await tf.loadGraphModel("../assets/TomatoModel/tomatoes.h5");
+
+  //   // Load class labels from a .txt file
+  //   const classLabelsResponse = await fetch("../assets/TomatoModel/labels.txt");
+  //   const classLabelsText = await classLabelsResponse.text();
+  //   const classLabels = classLabelsText.split("\n");
+
+  //   // Create a new image element and load the selected image
+  //   const image = new Image();
+  //   await new Promise((resolve, reject) => {
+  //     image.onload = resolve;
+  //     image.onerror = reject;
+  //     image.src = selectedImage;
+  //   });
+
+  //   // Create a canvas and draw the image
+  //   const canvas = document.createElement("canvas");
+  //   const ctx = canvas.getContext("2d");
+  //   canvas.width = image.width;
+  //   canvas.height = image.height;
+  //   ctx.drawImage(image, 0, 0);
+
+  //   // Convert the canvas image data to a TensorFlow tensor
+  //   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  //   const { data, width, height } = imageData;
+  //   const tensor = tf.tensor3d(data, [height, width, 4], "int32");
+  //   const resizedTensor = tf.image.resizeBilinear(tensor, [224, 224]);
+  //   const expandedTensor = resizedTensor.expandDims();
+
+  //   // Normalize the tensor values
+  //   const normalizedTensor = expandedTensor.div(255.0);
+
+  //   // Run the image through the model and get predictions
+  //   const predictions = await model.predict(normalizedTensor).data();
+
+  //   // Map predicted values to class labels
+  //   const mappedPredictions = Array.from(predictions).map(
+  //     (prediction, index) => {
+  //       return {
+  //         classLabel: classLabels[index],
+  //         confidence: prediction,
+  //       };
+  //     }
+  //   );
+
+  //   console.log(mappedPredictions);
+  // }
+
   const onReset = () => {
     setShowAppOptions(false);
   };
@@ -69,7 +129,7 @@ export default function Dashboard() {
   const onSaveImageAsync = async () => {
     if (Platform.OS !== "web") {
       try {
-        const localUri = await captureRef(imageRef, {
+        const localUri = await captureRef(ref, {
           height: 440,
           quality: 1,
         });
@@ -89,7 +149,7 @@ export default function Dashboard() {
         })
         .then((dataUrl) => {
           let link = document.createElement("a");
-          link.download = "sticker-smash.jpeg";
+          link.download = "1.jpeg";
           link.href = dataUrl;
           link.click();
         })
@@ -102,9 +162,10 @@ export default function Dashboard() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.imageContainer}>
-      <Text style={styles.paragraph}>
-        Change code in the editor and watch it change on your phone! Save to get a shareable url.
-      </Text>
+        <Text style={styles.paragraph}>
+          Change code in the editor and watch it change on your phone! Save to
+          get a shareable url.
+        </Text>
         <View ref={imageRef} collapsable={false}>
           <ImageViewer
             ref={imageRef}
@@ -121,7 +182,6 @@ export default function Dashboard() {
           <Modal
             animationType="fade"
             transparent={true}
-            presentationStyle="pageSheet"
             visible={modalVisible}
             onRequestClose={() => {
               Alert.alert("Closed");
@@ -135,11 +195,29 @@ export default function Dashboard() {
                     <Text style={styles.heading}>Diagnosis Results</Text>
                   </View>
                   <View style={[styles.titleText1]}>
-                    <Text style={{flexDirection: 'row', flexWrap: 'nowrap', overflow: 'hidden'}}>Predicted Class: </Text>
+                    <Text
+                      style={{
+                        flexDirection: "row",
+                        flexWrap: "nowrap",
+                        overflow: "hidden",
+                      }}
+                    >
+                      Predicted Class:{" "}
+                    </Text>
                     <Text style={styles.class}>Tomato</Text>
                   </View>
                   <View style={[styles.titleText1]}>
-                    <Text style={[{flexDirection: 'row', flexWrap: 'nowrap', overflow: 'hidden'}]}>Confidence Level: </Text>
+                    <Text
+                      style={[
+                        {
+                          flexDirection: "row",
+                          flexWrap: "nowrap",
+                          overflow: "hidden",
+                        },
+                      ]}
+                    >
+                      Confidence Level:{" "}
+                    </Text>
                     <Text style={styles.class}>90%</Text>
                   </View>
                 </Text>
@@ -154,7 +232,12 @@ export default function Dashboard() {
           </Modal>
           <View style={styles.optionsRow}>
             <IconButton icon="refresh" label="Reset" onPress={onReset} />
-            <CircleButton onPress={() => setModalVisible(true)} />
+            <CircleButton
+              onPress={() => {
+                setModalVisible(true);
+                // runModel();
+              }}
+            />
             <IconButton
               icon="save-alt"
               label="Save"
@@ -168,8 +251,13 @@ export default function Dashboard() {
             <Button
               theme="secondary"
               label="Use Camera"
-              onPress={() => navigation.navigate("Camera")}
+              onPress={() =>
+                navigation.navigate("Camera", {
+                  setDashboardImage: setSelectedImage,
+                })
+              }
             />
+
             <Button
               theme="primary"
               label="Use Gallery"
@@ -189,8 +277,10 @@ export default function Dashboard() {
       </EmojiPicker>
       <StatusBar style="auto" />
     </GestureHandlerRootView>
-  );  
-}
+  );
+});
+
+export default Dashboard;
 
 const styles = StyleSheet.create({
   container: {
@@ -200,20 +290,19 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     paddingTop: 58,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 24,
   },
   paragraph: {
     margin: 24,
     marginTop: 0,
-    color: 'white',
+    color: "white",
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   baseText: {
-    fontFamily: "Cochin",
     marginBottom: 20,
   },
   heading: {
@@ -226,8 +315,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: "5%",
-    paddingLeft: '0%',
-    paddingRight: '0%',
+    paddingLeft: "0%",
+    paddingRight: "0%",
   },
   titleText1: {
     fontSize: 20,
@@ -235,8 +324,8 @@ const styles = StyleSheet.create({
     color: "tomato",
     textAlign: "left",
     padding: "5%",
-    paddingLeft: '0%',
-    paddingRight: '0%',
+    paddingLeft: "0%",
+    paddingRight: "0%",
   },
   class: {
     color: "white",
@@ -307,76 +396,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
-// import { useState } from 'react';
-// import { StatusBar } from "expo-status-bar";
-// import { StyleSheet, View} from "react-native";
-// import Button from '.../elements/Button';
-// import ImageViewer from '.../elements/ImageViewer';
-// import * as ImagePicker from 'expo-image-picker';
-// import { Camera } from 'expo-camera';
-
-// const PlaceholderImage = require("../assets/background-image.png");
-
-// export default function Dashboard() {
-//   //Gallery
-//   const [selectedImage, setSelectedImage] = useState(null);
-
-//   const pickImageAsync = async () => {
-//     let result = await ImagePicker.launchImageLibraryAsync({
-//       allowsEditing: true,
-//       quality: 1,
-//     });
-
-//     if (!result.canceled) {
-//       setSelectedImage(result.assets[0].uri);
-//       // console.log(result.assets[0].uri)
-//     } else {
-//       alert('You did not select any image.');
-//     }
-//   };
-//   return (
-//     <View style={styles.container}>
-//       <View style={styles.imageContainer}>
-//         <ImageViewer
-//           placeholderImageSource={PlaceholderImage}
-//           selectedImage={selectedImage}
-//         />
-//       </View>
-//       <View style={styles.footerContainer1}>
-//         <Button label="Use this photo" />
-//       </View>
-//       <View style={styles.footerContainer}>
-//         <Button theme="secondary" label="Use Camera"
-//           onPress={() => navigation.navigate("Camera")} />
-//         <Button theme="primary" label="Use Gallery" onPress={pickImageAsync} />
-//       </View>
-//       <StatusBar style="auto" />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#25292e',
-//     alignItems: 'center',
-//   },
-//   imageContainer: {
-//     flex: 1,
-//     paddingTop: 58,
-//   },
-//   footerContainer: {
-//     flex: 1,
-//     flexDirection: "row",
-//     justifyContent: "space-around",
-//     margin: '20%',
-//     marginTop: '10%',
-//   },
-//   footerContainer1: {
-//     flex: 1,
-//     alignItems: 'center',
-//     margin: '20%',
-//     marginBottom: '0%',
-//   }
-// });
