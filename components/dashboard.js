@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   Text,
+  ImageBackground,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -23,13 +24,20 @@ import EmojiList from "../elements/EmojiList";
 import EmojiSticker from "../elements/EmojiSticker";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRoute } from "@react-navigation/native";
-// import * as tf from "@tensorflow/tfjs";
 
-// import { TFLiteImageRecognition } from "react-native-tensorflow-lite";
+//
+const React = require("react");
+const {
+  getPredictions,
+  transformImageToTensor,
+  loadModel,
+} = require("./imageUtils");
 
 const PlaceholderImage = require("../assets/giffy.gif");
 
 const Dashboard = forwardRef(({ navigation }, ref) => {
+
+  // Hooks
   const [modalVisible, setModalVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showAppOptions, setShowAppOptions] = useState(false);
@@ -38,12 +46,38 @@ const Dashboard = forwardRef(({ navigation }, ref) => {
   const [status, requestPermission] = MediaLibrary.usePermissions();
   const imageRef = useRef();
   const route = useRoute();
+ //
+  const [predictedClass, setPredictedClass] = React.useState(null);
+  const [predictedProbability, setPredictedProbability] = React.useState(null);
 
+  // Model Prediction
+
+  const getPredictionsForSelectedImage = async () => {
+    try {
+      // Load the model (you can do this in the component's useEffect as well if the model is loaded only once)
+      const model = await loadModel();
+  
+      // Transform the selected image to a tensor
+      const tensorImage = await transformImageToTensor(selectedImage);
+  
+      // Get the predictions for the image
+      const { class: predictedClass, probability } = await getPredictions(tensorImage);
+  
+      // Set the predicted class and probability states
+      setPredictedClass(predictedClass);
+      setPredictedProbability(probability);
+    } catch (error) {
+      console.error("Error predicting image:", error);
+    }
+  };
+
+  // Camera and Gallery Logic
   useEffect(() => {
     const { takenImage } = route.params || {};
     if (takenImage) {
       setSelectedImage(takenImage);
       setShowAppOptions(true);
+
     }
   }, [route.params]);
 
@@ -64,55 +98,6 @@ const Dashboard = forwardRef(({ navigation }, ref) => {
       alert("You did not select any image.");
     }
   };
-
-  // async function runModel() {
-  //   const model = await tf.loadGraphModel("../assets/TomatoModel/tomatoes.h5");
-
-  //   // Load class labels from a .txt file
-  //   const classLabelsResponse = await fetch("../assets/TomatoModel/labels.txt");
-  //   const classLabelsText = await classLabelsResponse.text();
-  //   const classLabels = classLabelsText.split("\n");
-
-  //   // Create a new image element and load the selected image
-  //   const image = new Image();
-  //   await new Promise((resolve, reject) => {
-  //     image.onload = resolve;
-  //     image.onerror = reject;
-  //     image.src = selectedImage;
-  //   });
-
-  //   // Create a canvas and draw the image
-  //   const canvas = document.createElement("canvas");
-  //   const ctx = canvas.getContext("2d");
-  //   canvas.width = image.width;
-  //   canvas.height = image.height;
-  //   ctx.drawImage(image, 0, 0);
-
-  //   // Convert the canvas image data to a TensorFlow tensor
-  //   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  //   const { data, width, height } = imageData;
-  //   const tensor = tf.tensor3d(data, [height, width, 4], "int32");
-  //   const resizedTensor = tf.image.resizeBilinear(tensor, [224, 224]);
-  //   const expandedTensor = resizedTensor.expandDims();
-
-  //   // Normalize the tensor values
-  //   const normalizedTensor = expandedTensor.div(255.0);
-
-  //   // Run the image through the model and get predictions
-  //   const predictions = await model.predict(normalizedTensor).data();
-
-  //   // Map predicted values to class labels
-  //   const mappedPredictions = Array.from(predictions).map(
-  //     (prediction, index) => {
-  //       return {
-  //         classLabel: classLabels[index],
-  //         confidence: prediction,
-  //       };
-  //     }
-  //   );
-
-  //   console.log(mappedPredictions);
-  // }
 
   const onReset = () => {
     setShowAppOptions(false);
@@ -159,12 +144,22 @@ const Dashboard = forwardRef(({ navigation }, ref) => {
     }
   };
 
+  useEffect(() => {
+    if (selectedImage) {
+      getPredictionsForSelectedImage();
+    }
+  }, [selectedImage]);
+
   return (
     <GestureHandlerRootView style={styles.container}>
+      
+    <ImageBackground
+      source={require("../assets/bg2.png")}
+      style={styles.background}>
       <View style={styles.imageContainer}>
         <Text style={styles.paragraph}>
-          Change code in the editor and watch it change on your phone! Save to
-          get a shareable url.
+          Use Left button to open camera, or 
+                Right button open gallery
         </Text>
         <View ref={imageRef} collapsable={false}>
           <ImageViewer
@@ -204,7 +199,7 @@ const Dashboard = forwardRef(({ navigation }, ref) => {
                     >
                       Predicted Class:{" "}
                     </Text>
-                    <Text style={styles.class}>Tomato</Text>
+                    <Text style={styles.class}>{predictedClass}</Text>
                   </View>
                   <View style={[styles.titleText1]}>
                     <Text
@@ -218,7 +213,7 @@ const Dashboard = forwardRef(({ navigation }, ref) => {
                     >
                       Confidence Level:{" "}
                     </Text>
-                    <Text style={styles.class}>90%</Text>
+                    <Text style={styles.class}>{predictedProbability}</Text>
                   </View>
                 </Text>
                 <Pressable
@@ -276,6 +271,7 @@ const Dashboard = forwardRef(({ navigation }, ref) => {
         <EmojiList onSelect={setPickedEmoji} onCloseModal={onModalClose} />
       </EmojiPicker>
       <StatusBar style="auto" />
+    </ImageBackground>
     </GestureHandlerRootView>
   );
 });
@@ -283,9 +279,14 @@ const Dashboard = forwardRef(({ navigation }, ref) => {
 export default Dashboard;
 
 const styles = StyleSheet.create({
+  
+  background: {
+    width: "100%",
+    height: "100%",
+  },
   container: {
     flex: 1,
-    backgroundColor: "#25292e",
+    // backgroundColor: "#25292e",
     alignItems: "center",
   },
   imageContainer: {
@@ -351,6 +352,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
+    marginLeft: '10%'
   },
   centeredView: {
     flex: 1,
