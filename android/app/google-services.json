@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "144666709487",
+    "project_id": "expo-app-27aef",
+    "storage_bucket": "expo-app-27aef.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144666709487:android:0b90470cadfb1fc92dfa1a",
+        "android_client_info": {
+          "package_name": "tomato_app.diagnosis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "144666709487-glifs809uochtpmmorr635et6uihfe21.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRYr2Qte7zeC4MXOJBelswZXdi9CYXKUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "144666709487-glifs809uochtpmmorr635et6uihfe21.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
