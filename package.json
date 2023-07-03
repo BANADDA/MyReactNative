@@ -25,6 +25,7 @@
     "@tensorflow/tfjs-converter": "^4.8.0",
     "@tensorflow/tfjs-node": "^4.8.0",
     "@tensorflow/tfjs-react-native": "^0.8.0",
+    "base64-arraybuffer": "^1.0.2",
     "dom-to-image": "^2.6.0",
     "expo": "~48.0.18",
     "expo-camera": "~13.2.1",
